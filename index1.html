@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rod Cutting Teaching Tool - CLO Aligned Final</title>
+<style>
+  :root{
+    --bg:#0f1117;
+    --panel:#171b24;
+    --panel2:#1f2430;
+    --text:#e6edf3;
+    --muted:#9da7b3;
+    --line:#2d3445;
+    --accent:#4ea1ff;
+    --green:#2ecc71;
+    --yellow:#f1c40f;
+    --red:#ff5d73;
+    --purple:#b388ff;
+    --cyan:#49dcb1;
+    --orange:#ff9f43;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+  }
+  body{overflow:auto}
+  .app{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    min-height:100vh;
+  }
+  .left{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    padding:18px;
+    overflow:auto;
+  }
+  .right{
+    padding:18px;
+    overflow:auto;
+  }
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    .left{
+      border-right:none;
+      border-bottom:1px solid var(--line);
+    }
+  }
+  h1,h2,h3{margin:0 0 10px}
+  h1{font-size:24px}
+  h2{font-size:18px}
+  h3{font-size:15px}
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.55;
+  }
+  .card{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  input[type=text]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#0f141d;
+    color:var(--text);
+  }
+  button{
+    background:#22293a;
+    color:var(--text);
+    border:1px solid #364058;
+    border-radius:10px;
+    padding:9px 12px;
+    cursor:pointer;
+    transition:all .22s ease;
+  }
+  button:hover{background:#2a3348}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .preset{font-size:12px;padding:7px 10px}
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .stat{
+    background:#101520;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+  }
+  .stat .label{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .stat .value{
+    font-size:22px;
+    font-weight:700;
+    margin-top:6px;
+  }
+  .legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .lg{
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .sw{
+    width:14px;
+    height:14px;
+    border-radius:4px;
+    border:1px solid #0005;
+  }
+  .section-grid{
+    display:grid;
+    grid-template-columns:1.08fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  @media (max-width:1200px){
+    .section-grid{grid-template-columns:1fr}
+  }
+  .code{
+    background:#0f141d;
+    border:1px solid var(--line);
+    border-radius:12px;
+    max-height:250px;
+    overflow:auto;
+    overscroll-behavior:contain;
+    font-family:Consolas,monospace;
+    font-size:13px;
+    scrollbar-width:thin;
+  }
+  .history-wrap{
+    max-height:280px;
+    overflow:auto;
+    overscroll-behavior:contain;
+    border:1px solid var(--line);
+    border-radius:12px;
+    scrollbar-width:thin;
+  }
+  .chart-wrap,
+  .tree-scroll,
+  .table-scroll{
+    overflow:auto;
+    overscroll-behavior:contain;
+    border-radius:12px;
+  }
+  .code-line{
+    display:grid;
+    grid-template-columns:38px 1fr;
+    gap:8px;
+    padding:7px 10px;
+    border-bottom:1px solid #1f2634;
+    transition:background .25s ease;
+  }
+  .code-line:last-child{border-bottom:none}
+  .ln{color:var(--muted)}
+  .code-line.active{background:#1d2b45}
+  .tip{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+  .explain{
+    min-height:82px;
+    line-height:1.6;
+    color:#d7dee8;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+  th,td{
+    padding:8px 10px;
+    border-bottom:1px solid #242c3b;
+    text-align:left;
+    vertical-align:top;
+  }
+  th{
+    position:sticky;
+    top:0;
+    background:#141a26;
+    z-index:1;
+  }
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover{background:#151d2a}
+  .dp-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+    gap:10px;
+    margin-top:12px;
+  }
+  .dp-box{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#101520;
+    overflow:hidden;
+    transition:all .24s ease;
+    position:relative;
+    min-height:96px;
+  }
+  .dp-box .head{
+    font-size:12px;
+    color:var(--muted);
+    background:#131a25;
+    padding:6px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .dp-box .value{
+    padding:10px 8px 4px;
+    text-align:center;
+    font-size:24px;
+    font-weight:700;
+  }
+  .dp-box .mini{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    padding:0 6px 10px;
+    min-height:24px;
+  }
+  .dp-box.current{
+    outline:2px solid var(--accent);
+    box-shadow:0 0 0 2px #4ea1ff20, 0 0 16px #4ea1ff2a;
+    transform:translateY(-2px);
+  }
+  .dp-box.lookup{
+    outline:2px solid var(--yellow);
+    box-shadow:0 0 14px #f1c40f33;
+  }
+  .dp-box.done .value{color:var(--green)}
+  .dp-box.just-written{
+    outline:2px solid var(--green);
+    box-shadow:0 0 16px #2ecc7133;
+  }
+  .dp-box.pending{opacity:.82}
+  .formula{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:#101520;
+    border:1px dashed #3a4a69;
+    font-family:Consolas,monospace;
+    color:#dbe7ff;
+    line-height:1.5;
+  }
+  .cand-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+    margin-top:12px;
+  }
+  .cand{
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#101520;
+    padding:10px;
+    transition:all .28s ease;
+  }
+  .cand.active{
+    outline:2px solid var(--yellow);
+    box-shadow:0 0 16px #f1c40f22;
+  }
+  .cand.best{
+    outline:2px solid var(--green);
+    box-shadow:0 0 16px #2ecc7122;
+  }
+  .cand .top{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .cand .mid{
+    font-size:18px;
+    font-weight:700;
+    margin-top:6px;
+  }
+  .cand .btm{
+    font-size:12px;
+    color:#cfd8e3;
+    margin-top:6px;
+  }
+  .rod-box{
+    margin-top:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#101520;
+  }
+  .rod{
+    position:relative;
+    height:26px;
+    border-radius:999px;
+    background:linear-gradient(90deg,#6b4f2e,#c28d4e,#6b4f2e);
+    overflow:hidden;
+  }
+  .seg{
+    position:absolute;
+    top:0;
+    bottom:0;
+    border-right:2px dashed #0008;
+  }
+  .mark-label{
+    position:absolute;
+    top:30px;
+    transform:translateX(-50%);
+    color:var(--muted);
+    font-size:11px;
+  }
+  .cut-highlight{
+    position:absolute;
+    top:-6px;
+    bottom:-6px;
+    width:4px;
+    background:var(--yellow);
+    box-shadow:0 0 10px #f1c40f80;
+    transition:left .25s ease;
+  }
+  .tree-panel{min-height:320px}
+  svg{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+  .badge{
+    display:inline-block;
+    padding:3px 8px;
+    border-radius:999px;
+    font-size:11px;
+    border:1px solid var(--line);
+    color:var(--muted);
+    margin-left:6px;
+  }
+  .compare{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  @media (max-width:900px){
+    .compare{grid-template-columns:1fr}
+  }
+  .mini-note{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+  }
+  .pill{
+    display:inline-block;
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:#0f141d;
+    border:1px solid var(--line);
+    color:var(--muted);
+    margin-right:6px;
+  }
+  details summary{
+    cursor:pointer;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .keybox{
+    border-left:4px solid var(--accent);
+    padding:10px 12px;
+    background:#101520;
+    border-radius:10px;
+    margin-top:10px;
+    font-size:13px;
+    line-height:1.6;
+  }
+  .tree-legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    font-size:12px;
+    color:var(--muted);
+    margin-top:8px;
+  }
+  .subprob-table td.active-cell{
+    background:#2b3448;
+  }
+  .subprob-table td.hit{
+    background:#3a2e18;
+    color:#ffe08a;
+  }
+  .subprob-table td.store{
+    background:#173327;
+    color:#9ff0bc;
+  }
+  .subprob-table td.naive-hot{
+    background:#3b1f26;
+    color:#ffb6c1;
+  }
+  .mini-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:10px;
+    margin-top:12px;
+  }
+  .mini-card{
+    background:#101520;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    min-height:92px;
+  }
+  .mini-card .title{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .mini-card .big{
+    font-size:20px;
+    font-weight:700;
+    margin-top:8px;
+  }
+  .mini-card .small{
+    font-size:12px;
+    color:#cfd8e3;
+    margin-top:6px;
+    line-height:1.5;
+  }
+  .cache-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(82px,1fr));
+    gap:8px;
+    margin-top:12px;
+  }
+  .cache-box{
+    background:#101520;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px;
+    text-align:center;
+    transition:all .24s ease;
+  }
+  .cache-box.ask{
+    outline:2px solid var(--accent);
+    box-shadow:0 0 12px #4ea1ff22;
+  }
+  .cache-box.hit{
+    outline:2px solid var(--yellow);
+    box-shadow:0 0 12px #f1c40f22;
+  }
+  .cache-box.store{
+    outline:2px solid var(--green);
+    box-shadow:0 0 12px #2ecc7122;
+  }
+  .order-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(76px,1fr));
+    gap:8px;
+    margin-top:12px;
+  }
+  .order-box{
+    background:#101520;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 6px;
+    text-align:center;
+    font-size:12px;
+    transition:all .24s ease;
+  }
+  .order-box.current{
+    outline:2px solid var(--accent);
+    transform:translateY(-2px);
+  }
+  .order-box.done{
+    border-color:#2d6b46;
+    color:#9ff0bc;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="left">
+    <div class="card">
+      <h1>Rod Cutting Visualizer</h1>
+      <div class="sub">
+        A single-file interactive teaching tool that strictly demonstrates the three required CLOs:
+        recursion vs DP complexity, best-cut searching, and dynamic programming structure.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="sub" style="margin-bottom:8px;">Enter prices for lengths 1..n</div>
+      <input id="priceInput" type="text" value="1,5,8,9,10,17,17,20" />
+
+      <div class="row" style="margin-top:10px;">
+        <button class="preset" data-preset="1,5,8,9,10,17,17,20">Preset 1</button>
+        <button class="preset" data-preset="2,5,7,8,10">Preset 2</button>
+        <button id="customPresetBtn" class="preset">Custom</button>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="buildBtn">Build Steps</button>
+        <button id="stepBtn">Step</button>
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label for="speedRange">Speed: <span id="speedLabel">1.00x</span></label>
+        <input id="speedRange" type="range" min="0.25" max="4" step="0.25" value="1" style="width:100%;">
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div class="pill">Step <span id="stepCounter">0 / 0</span></div>
+        <div class="pill">Status <span id="statusText">Idle</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Live Statistics</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">DP candidate checks</div>
+          <div class="value" id="dpComparisons">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Naive recursion calls</div>
+          <div class="value" id="naiveCalls">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Memoized calls</div>
+          <div class="value" id="memoCalls">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Best revenue r[n]</div>
+          <div class="value" id="bestRevenue">0</div>
+        </div>
+      </div>
+      <div class="keybox">
+        <strong>CLO-1 strict match:</strong> besides totals, this tool also shows how many times each subproblem
+        <code>r(k)</code> is evaluated in Naive Recursion, Memoization, and Tabulation.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pseudocode</h2>
+      <div class="code" id="pseudocode"></div>
+    </div>
+
+    <div class="card">
+      <h2>Step Explanation</h2>
+      <div id="explanation" class="explain">Build the steps first.</div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <div class="history-wrap" id="historyWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:72px;">Step</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </aside>
+
+  <main class="right">
+    <div class="card">
+      <h2>Legend</h2>
+      <div class="legend">
+        <div class="lg"><span class="sw" style="background:var(--yellow)"></span>Current search / lookup / cache hit</div>
+        <div class="lg"><span class="sw" style="background:var(--green)"></span>Stored optimal value / cache store</div>
+        <div class="lg"><span class="sw" style="background:var(--red)"></span>Overlapping subproblem / repeated state</div>
+        <div class="lg"><span class="sw" style="background:var(--accent)"></span>Current DP state / current memo request</div>
+        <div class="lg"><span class="sw" style="background:var(--purple)"></span>Current recursion node</div>
+      </div>
+    </div>
+
+    <div class="section-grid">
+      <section class="card">
+        <h2>CLO-2: Search for the Best Cut</h2>
+        <div class="sub">
+          For each rod length <strong>j</strong>, the algorithm searches all first-cut positions <strong>i</strong>.
+          It evaluates <code>price[i] + revenue[j-i]</code>, so the DP table lookup itself becomes part of the search process.
+        </div>
+
+        <div class="rod-box">
+          <div id="rodTitle" class="sub" style="margin-bottom:8px;">Rod view</div>
+          <div id="rodArea"></div>
+        </div>
+
+        <div class="formula" id="searchFormula">
+          revenue[j] = max(price[i] + revenue[j-i])
+        </div>
+
+        <div class="cand-grid" id="candidateGrid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Dynamic Programming Table <span class="badge">Tabulation</span></h2>
+        <div class="sub">
+          The table is filled bottom-up. Blue marks the current target <code>r[j]</code>, yellow marks the lookup
+          <code>r[j-i]</code>, and green marks a completed write.
+        </div>
+        <div class="dp-grid" id="dpTable"></div>
+        <div class="keybox" id="dpNarrative">
+          Build steps to see the table fill from r[0] up to r[n].
+        </div>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      <section class="card tree-panel">
+        <h2>CLO-1 & CLO-3: Naive Recursion Tree</h2>
+        <div class="sub">
+          This tree shows the exponential recursive search. Repeated red nodes are overlapping subproblems.
+          The purple flashing node marks the current recursive position, and the blue path shows the active call path.
+        </div>
+        <div class="tree-legend">
+          <div class="lg"><span class="sw" style="background:var(--purple)"></span>Current recursion node</div>
+          <div class="lg"><span class="sw" style="background:#5aa9ff"></span>Current recursion path</div>
+          <div class="lg"><span class="sw" style="background:var(--red)"></span>Repeated subproblem</div>
+        </div>
+        <div class="tree-scroll" id="treeScroll" style="margin-top:12px;">
+          <div id="treeWrap"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>CLO-3: Memoization vs Tabulation</h2>
+        <div class="compare">
+          <div>
+            <h3>Memoization (Top-Down)</h3>
+            <div class="mini-note" id="memoText">
+              Memoization starts from r(n), recursively asks for smaller states, and caches answers.
+            </div>
+            <div class="cache-grid" id="memoCacheGrid"></div>
+          </div>
+          <div>
+            <h3>Tabulation (Bottom-Up)</h3>
+            <div class="mini-note" id="tabText">
+              Tabulation fills r(0), r(1), r(2), ... up to r(n) in order.
+            </div>
+            <div class="order-grid" id="tabOrderGrid"></div>
+          </div>
+        </div>
+
+        <div class="formula" id="optimalFormula" style="margin-top:12px;">
+          Optimal substructure: r(n) = max over all i of [ price[i] + r(n-i) ]
+        </div>
+
+        <div class="mini-cards">
+          <div class="mini-card">
+            <div class="title">Current memo request</div>
+            <div class="big" id="memoCurrent">-</div>
+            <div class="small" id="memoEvent">Build steps to simulate memoization events.</div>
+          </div>
+          <div class="mini-card">
+            <div class="title">Current tabulation target</div>
+            <div class="big" id="tabCurrent">-</div>
+            <div class="small" id="tabEvent">Tabulation will fill answers bottom-up.</div>
+          </div>
+        </div>
+
+        <div class="keybox" id="clo3Box">
+          The rod cutting problem has <strong>optimal substructure</strong> and <strong>overlapping subproblems</strong>,
+          so Dynamic Programming is the correct paradigm.
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>CLO-1: Subproblem Evaluation Table</h2>
+      <div class="sub">
+        This table directly answers the CLO requirement: how many times each subproblem <code>r(k)</code> is evaluated
+        in Naive Recursion, Memoization, and Tabulation.
+      </div>
+      <div class="table-scroll" style="margin-top:12px;">
+        <table class="subprob-table">
+          <thead>
+            <tr>
+              <th>Subproblem</th>
+              <th>Naive Recursion</th>
+              <th>Memoization</th>
+              <th>Tabulation</th>
+              <th>Interpretation</th>
+            </tr>
+          </thead>
+          <tbody id="subproblemBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>CLO-1: Complexity Growth Comparison</h2>
+      <div class="sub">
+        White line: actual DP candidate checks. Green dashed line: theoretical O(n²).
+        Red line: naive recursion calls. Purple line: memoized calls.
+      </div>
+      <div class="chart-wrap">
+        <svg id="growthChart" viewBox="0 0 900 340"></svg>
+      </div>
+    </section>
+
+    <section class="card">
+      <details open>
+        <summary>Overview</summary>
+        <div class="sub">
+          Rod Cutting asks for the maximum revenue obtainable by splitting a rod into pieces.
+          A naive recursive solution repeats many subproblems, while Dynamic Programming stores and reuses them.
+        </div>
+      </details>
+
+      <details open>
+        <summary>Worked Example</summary>
+        <div class="sub">
+          With prices <code>1,5,8,9</code>, for length 4 the algorithm checks:
+          <code>1 + r(3)</code>, <code>5 + r(2)</code>, <code>8 + r(1)</code>, and <code>9 + r(0)</code>.
+          The maximum is <code>10</code>, so <code>r(4)=10</code>.
+        </div>
+      </details>
+
+      <details open>
+        <summary>Why Not Pure Recursion?</summary>
+        <div class="sub">
+          Pure recursion recomputes the same states again and again.
+          Memoization avoids this by caching from the top down, while tabulation avoids it by filling the table from the bottom up.
+        </div>
+      </details>
+    </section>
+  </main>
+</div>
+
+<script>
+const state = {
+  prices: [],
+  steps: [],
+  currentStep: 0,
+  timer: null,
+  speed: 1,
+  built: false,
+  pseudocode: [
+    { line: 1, code: "for j = 1 to n", tip: "Process rod lengths from small to large." },
+    { line: 2, code: "    q = -∞", tip: "Initialize the current best value for length j." },
+    { line: 3, code: "    for i = 1 to j", tip: "Search every possible first cut i." },
+    { line: 4, code: "        candidate = price[i] + revenue[j-i]", tip: "Use the price of the first piece plus the best revenue of the remaining piece." },
+    { line: 5, code: "        q = max(q, candidate)", tip: "Keep the best cut found so far." },
+    { line: 6, code: "    revenue[j] = q", tip: "Store the optimal answer for rod length j." }
+  ],
+  metrics: {
+    dpComparisonsTotal: 0,
+    naiveCallsTotal: 0,
+    memoCallsTotal: 0,
+    bestRevenue: 0,
+    growth: []
+  },
+  naiveInfo: null,
+  memoSim: null,
+  subproblemCounts: null
+};
+
+const els = {
+  priceInput: document.getElementById('priceInput'),
+  buildBtn: document.getElementById('buildBtn'),
+  stepBtn: document.getElementById('stepBtn'),
+  playBtn: document.getElementById('playBtn'),
+  pauseBtn: document.getElementById('pauseBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  speedRange: document.getElementById('speedRange'),
+  speedLabel: document.getElementById('speedLabel'),
+  stepCounter: document.getElementById('stepCounter'),
+  statusText: document.getElementById('statusText'),
+  dpComparisons: document.getElementById('dpComparisons'),
+  naiveCalls: document.getElementById('naiveCalls'),
+  memoCalls: document.getElementById('memoCalls'),
+  bestRevenue: document.getElementById('bestRevenue'),
+  pseudocode: document.getElementById('pseudocode'),
+  explanation: document.getElementById('explanation'),
+  historyBody: document.getElementById('historyBody'),
+  historyWrap: document.getElementById('historyWrap'),
+  dpTable: document.getElementById('dpTable'),
+  candidateGrid: document.getElementById('candidateGrid'),
+  searchFormula: document.getElementById('searchFormula'),
+  treeWrap: document.getElementById('treeWrap'),
+  treeScroll: document.getElementById('treeScroll'),
+  growthChart: document.getElementById('growthChart'),
+  rodArea: document.getElementById('rodArea'),
+  rodTitle: document.getElementById('rodTitle'),
+  dpNarrative: document.getElementById('dpNarrative'),
+  memoText: document.getElementById('memoText'),
+  tabText: document.getElementById('tabText'),
+  optimalFormula: document.getElementById('optimalFormula'),
+  clo3Box: document.getElementById('clo3Box'),
+  memoCacheGrid: document.getElementById('memoCacheGrid'),
+  tabOrderGrid: document.getElementById('tabOrderGrid'),
+  memoCurrent: document.getElementById('memoCurrent'),
+  memoEvent: document.getElementById('memoEvent'),
+  tabCurrent: document.getElementById('tabCurrent'),
+  tabEvent: document.getElementById('tabEvent'),
+  subproblemBody: document.getElementById('subproblemBody')
+};
+
+function stopWheelPropagation(el) {
+  if (!el) return;
+  el.addEventListener('wheel', (e) => {
+    const scrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const height = el.clientHeight;
+    const delta = e.deltaY;
+    const isScrollable = scrollHeight > height + 1;
+    if (!isScrollable) return;
+
+    const atTop = scrollTop <= 0;
+    const atBottom = scrollTop + height >= scrollHeight - 1;
+
+    if ((!atTop && delta < 0) || (!atBottom && delta > 0) || (!atTop && !atBottom)) {
+      e.stopPropagation();
+    }
+  }, { passive:true });
+}
+
+function renderPseudocode() {
+  els.pseudocode.innerHTML = '';
+  state.pseudocode.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'code-line';
+    row.dataset.line = item.line;
+    row.title = item.tip;
+    row.innerHTML = `
+      <div class="ln">${item.line}</div>
+      <div>
+        <div>${item.code}</div>
+        <div class="tip">${item.tip}</div>
+      </div>
+    `;
+    els.pseudocode.appendChild(row);
+  });
+}
+
+function setActiveLine(lineNo) {
+  [...els.pseudocode.children].forEach(node => {
+    const active = Number(node.dataset.line) === Number(lineNo);
+    node.classList.toggle('active', active);
+    if (active) node.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  });
+}
+
+function parsePrices() {
+  return els.priceInput.value
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter(v => !Number.isNaN(v) && v >= 0);
+}
+
+function setStatus(text) {
+  els.statusText.textContent = text;
+}
+
+function updateSpeed() {
+  state.speed = Number(els.speedRange.value);
+  els.speedLabel.textContent = state.speed.toFixed(2) + 'x';
+}
+
+function addHistory(stepIndex, desc) {
+  const tr = document.createElement('tr');
+  tr.className = 'clickable';
+  tr.innerHTML = `<td>${stepIndex + 1}</td><td>${desc}</td>`;
+  tr.addEventListener('click', () => {
+    pausePlayback();
+    state.currentStep = stepIndex;
+    renderCurrentStep();
+    setStatus('Paused');
+  });
+  els.historyBody.prepend(tr);
+  while (els.historyBody.children.length > 30) {
+    els.historyBody.removeChild(els.historyBody.lastChild);
+  }
+}
+
+function resetUIOnly() {
+  els.historyBody.innerHTML = '';
+  els.explanation.textContent = 'Build the steps first.';
+  els.dpTable.innerHTML = '';
+  els.candidateGrid.innerHTML = '';
+  els.treeWrap.innerHTML = '';
+  els.subproblemBody.innerHTML = '';
+  els.memoCacheGrid.innerHTML = '';
+  els.tabOrderGrid.innerHTML = '';
+  els.stepCounter.textContent = '0 / 0';
+  els.dpComparisons.textContent = '0';
+  els.naiveCalls.textContent = '0';
+  els.memoCalls.textContent = '0';
+  els.bestRevenue.textContent = '0';
+  els.rodArea.innerHTML = '';
+  els.searchFormula.textContent = 'revenue[j] = max(price[i] + revenue[j-i])';
+  els.dpNarrative.textContent = 'Build steps to see the table fill from r[0] up to r[n].';
+  els.memoCurrent.textContent = '-';
+  els.memoEvent.textContent = 'Build steps to simulate memoization events.';
+  els.tabCurrent.textContent = '-';
+  els.tabEvent.textContent = 'Tabulation will fill answers bottom-up.';
+  setActiveLine(-1);
+  drawGrowthChart([]);
+}
+
+function resetAll() {
+  pausePlayback();
+  state.steps = [];
+  state.currentStep = 0;
+  state.built = false;
+  state.metrics = { dpComparisonsTotal:0, naiveCallsTotal:0, memoCallsTotal:0, bestRevenue:0, growth:[] };
+  state.naiveInfo = null;
+  state.memoSim = null;
+  state.subproblemCounts = null;
+  resetUIOnly();
+  setStatus('Idle');
+}
+
+function buildSteps() {
+  pausePlayback();
+  resetUIOnly();
+
+  const prices = parsePrices();
+  if (!prices.length) {
+    els.explanation.textContent = 'Please enter valid non-negative prices like 1,5,8,9.';
+    setStatus('Idle');
+    return;
+  }
+
+  state.prices = prices;
+  const n = prices.length;
+  const revenue = new Array(n + 1).fill(0);
+  const bestCut = new Array(n + 1).fill(0);
+  const steps = [];
+  let dpComparisons = 0;
+
+  for (let j = 1; j <= n; j++) {
+    let q = -Infinity;
+    let bestI = 1;
+    const localCandidates = [];
+
+    steps.push({
+      line: 1,
+      kind: 'start-length',
+      j,
+      revenue: [...revenue],
+      prices: [...prices],
+      candidates: [],
+      currentI: null,
+      bestI: null,
+      bestValueSoFar: null,
+      writtenIndex: null,
+      explanation: `CLO-2: Start searching the best first cut for rod length ${j}. We will test every i from 1 to ${j}.`,
+      dpComparisons
+    });
+
+    steps.push({
+      line: 2,
+      kind: 'init-q',
+      j,
+      revenue: [...revenue],
+      prices: [...prices],
+      candidates: [],
+      currentI: null,
+      bestI: null,
+      bestValueSoFar: q,
+      writtenIndex: null,
+      explanation: `Initialize q = -∞ for length ${j}. No cut has been accepted yet.`,
+      dpComparisons
+    });
+
+    for (let i = 1; i <= j; i++) {
+      const remainder = j - i;
+      const candidate = prices[i - 1] + revenue[remainder];
+      dpComparisons++;
+
+      localCandidates.push({
+        i,
+        remainder,
+        price: prices[i - 1],
+        revenueRem: revenue[remainder],
+        candidate
+      });
+
+      steps.push({
+        line: 3,
+        kind: 'scan-i',
+        j,
+        revenue: [...revenue],
+        prices: [...prices],
+        candidates: [...localCandidates],
+        currentI: i,
+        bestI,
+        bestValueSoFar: q,
+        writtenIndex: null,
+        explanation: `Search step: try first cut i = ${i}. The remaining rod length is ${remainder}, so we must look up r[${remainder}] in the DP table.`,
+        dpComparisons
+      });
+
+      const improved = candidate > q;
+      if (improved) {
+        q = candidate;
+        bestI = i;
+      }
+
+      steps.push({
+        line: 4,
+        kind: 'candidate',
+        j,
+        revenue: [...revenue],
+        prices: [...prices],
+        candidates: [...localCandidates],
+        currentI: i,
+        bestI,
+        bestValueSoFar: q,
+        writtenIndex: null,
+        explanation: `Evaluate price[${i}] + revenue[${remainder}] = ${prices[i - 1]} + ${revenue[remainder]} = ${candidate}. This demonstrates the optimal substructure formula.`,
+        dpComparisons
+      });
+
+      steps.push({
+        line: 5,
+        kind: 'update-best',
+        j,
+        revenue: [...revenue],
+        prices: [...prices],
+        candidates: [...localCandidates],
+        currentI: i,
+        bestI,
+        bestValueSoFar: q,
+        writtenIndex: null,
+        explanation: improved
+          ? `The candidate ${candidate} is better, so the current best for r[${j}] becomes ${q} with first cut ${bestI}.`
+          : `The candidate ${candidate} does not beat the current best ${q}, so the best first cut remains ${bestI}.`,
+        dpComparisons
+      });
+    }
+
+    revenue[j] = q;
+    bestCut[j] = bestI;
+
+    steps.push({
+      line: 6,
+      kind: 'write-dp',
+      j,
+      revenue: [...revenue],
+      prices: [...prices],
+      candidates: [...localCandidates],
+      currentI: null,
+      bestI,
+      bestValueSoFar: q,
+      writtenIndex: j,
+      explanation: `Store the final answer: r[${j}] = ${q}. Tabulation has solved this subproblem exactly once and can now reuse it later.`,
+      dpComparisons,
+      bestCut: [...bestCut]
+    });
+  }
+
+  const naiveInfo = buildNaiveTree(n);
+  const memoInfo = countMemoCallsAndEvents(n, prices);
+  const subproblemCounts = buildSubproblemCounts(n, prices);
+
+  state.steps = steps;
+  state.currentStep = 0;
+  state.built = true;
+  state.naiveInfo = naiveInfo;
+  state.memoSim = memoInfo;
+  state.subproblemCounts = subproblemCounts;
+  state.metrics = {
+    dpComparisonsTotal: dpComparisons,
+    naiveCallsTotal: naiveInfo.totalCalls,
+    memoCallsTotal: memoInfo.totalCalls,
+    bestRevenue: revenue[n],
+    growth: buildGrowth(prices)
+  };
+
+  els.naiveCalls.textContent = naiveInfo.totalCalls;
+  els.memoCalls.textContent = memoInfo.totalCalls;
+  els.bestRevenue.textContent = revenue[n];
+  renderSubproblemTable();
+  renderMemoCacheGrid(null);
+  renderTabOrderGrid(null);
+  drawGrowthChart(state.metrics.growth);
+
+  setStatus('Ready');
+  renderCurrentStep();
+}
+
+function buildNaiveTree(n) {
+  let totalCalls = 0;
+  const counts = {};
+  let idCounter = 0;
+  const maxDepth = Math.min(n, 5);
+
+  function visit(x, depth, parentId = null) {
+    totalCalls++;
+    counts[x] = (counts[x] || 0) + 1;
+    const node = {
+      id: idCounter++,
+      value: x,
+      depth,
+      parentId,
+      children: []
+    };
+    if (x === 0 || depth >= maxDepth) return node;
+    for (let i = 1; i <= x; i++) {
+      node.children.push(visit(x - i, depth + 1, node.id));
+    }
+    return node;
+  }
+
+  const root = visit(n, 0, null);
+  const ordered = [];
+  function flatten(node) {
+    ordered.push(node);
+    node.children.forEach(flatten);
+  }
+  flatten(root);
+
+  const nodeMap = new Map();
+  ordered.forEach(v => nodeMap.set(v.id, v));
+  return { root, counts, totalCalls, n, ordered, nodeMap };
+}
+
+function countMemoCallsAndEvents(n, prices) {
+  const memo = {};
+  const counts = {};
+  const events = [];
+  let totalCalls = 0;
+
+  function solve(x) {
+    totalCalls++;
+    counts[x] = (counts[x] || 0) + 1;
+    events.push({ type:'ask', x });
+
+    if (x === 0) {
+      events.push({ type:'base', x, value:0 });
+      return 0;
+    }
+
+    if (memo[x] !== undefined) {
+      events.push({ type:'hit', x, value:memo[x] });
+      return memo[x];
+    }
+
+    let q = -Infinity;
+    for (let i = 1; i <= x; i++) {
+      const candidate = prices[i - 1] + solve(x - i);
+      q = Math.max(q, candidate);
+    }
+    memo[x] = q;
+    events.push({ type:'store', x, value:q });
+    return q;
+  }
+
+  solve(n);
+  return { totalCalls, memo, counts, events };
+}
+
+function buildSubproblemCounts(n, prices) {
+  const naiveCounts = {};
+  function naive(x) {
+    naiveCounts[x] = (naiveCounts[x] || 0) + 1;
+    if (x === 0) return 0;
+    let q = -Infinity;
+    for (let i = 1; i <= x; i++) {
+      q = Math.max(q, prices[i - 1] + naive(x - i));
+    }
+    return q;
+  }
+  naive(n);
+
+  const memoCounts = {};
+  const memo = {};
+  function memoSolve(x) {
+    memoCounts[x] = (memoCounts[x] || 0) + 1;
+    if (x === 0) return 0;
+    if (memo[x] !== undefined) return memo[x];
+    let q = -Infinity;
+    for (let i = 1; i <= x; i++) {
+      q = Math.max(q, prices[i - 1] + memoSolve(x - i));
+    }
+    memo[x] = q;
+    return q;
+  }
+  memoSolve(n);
+
+  const tabCounts = {};
+  const r = new Array(n + 1).fill(0);
+  tabCounts[0] = 1;
+  for (let j = 1; j <= n; j++) {
+    tabCounts[j] = 1;
+    let q = -Infinity;
+    for (let i = 1; i <= j; i++) {
+      q = Math.max(q, prices[i - 1] + r[j - i]);
+    }
+    r[j] = q;
+  }
+
+  return { naiveCounts, memoCounts, tabCounts, n };
+}
+
+function buildGrowth(prices) {
+  const out = [];
+  for (let n = 1; n <= prices.length; n++) {
+    const subPrices = prices.slice(0, n);
+
+    let dpComp = 0;
+    const r = new Array(n + 1).fill(0);
+    for (let j = 1; j <= n; j++) {
+      let q = -Infinity;
+      for (let i = 1; i <= j; i++) {
+        dpComp++;
+        q = Math.max(q, subPrices[i - 1] + r[j - i]);
+      }
+      r[j] = q;
+    }
+
+    let naiveCalls = 0;
+    function naive(x) {
+      naiveCalls++;
+      if (x === 0) return 0;
+      let q = -Infinity;
+      for (let i = 1; i <= x; i++) {
+        q = Math.max(q, subPrices[i - 1] + naive(x - i));
+      }
+      return q;
+    }
+    naive(n);
+
+    let memoCalls = 0;
+    const memo = {};
+    function memoSolve(x) {
+      memoCalls++;
+      if (x === 0) return 0;
+      if (memo[x] !== undefined) return memo[x];
+      let q = -Infinity;
+      for (let i = 1; i <= x; i++) {
+        q = Math.max(q, subPrices[i - 1] + memoSolve(x - i));
+      }
+      memo[x] = q;
+      return q;
+    }
+    memoSolve(n);
+
+    out.push({ n, dpComp, naiveCalls, memoCalls, n2:n*n });
+  }
+  return out;
+}
+
+function renderSubproblemTable() {
+  els.subproblemBody.innerHTML = '';
+  if (!state.subproblemCounts) return;
+  const n = state.subproblemCounts.n;
+
+  for (let k = 0; k <= n; k++) {
+    const naive = state.subproblemCounts.naiveCounts[k] || 0;
+    const memo = state.subproblemCounts.memoCounts[k] || 0;
+    const tab = state.subproblemCounts.tabCounts[k] || 0;
+
+    let meaning = '';
+    if (naive > 1 && memo === 1 && tab === 1) {
+      meaning = 'Repeated in naive, solved once by DP methods';
+    } else if (k === 0) {
+      meaning = 'Base case';
+    } else if (naive === 1 && memo === 1 && tab === 1) {
+      meaning = 'Solved once in all methods for this state';
+    } else {
+      meaning = 'Memoization reduces repeated recomputation';
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>r(${k})</td>
+      <td>${naive}</td>
+      <td>${memo}</td>
+      <td>${tab}</td>
+      <td>${meaning}</td>
+    `;
+    els.subproblemBody.appendChild(tr);
+  }
+}
+
+function getCurrentTreeNodeAndPath() {
+  if (!state.naiveInfo || !state.steps.length) return { currentNodeId:null, pathIds:new Set(), revealedIds:new Set() };
+  const totalNodes = state.naiveInfo.ordered.length;
+  const progress = state.currentStep / Math.max(1, state.steps.length - 1);
+  const currentIndex = Math.min(totalNodes - 1, Math.floor(progress * (totalNodes - 1)));
+  const currentNode = state.naiveInfo.ordered[currentIndex];
+  const pathIds = new Set();
+  let cursor = currentNode;
+  while (cursor) {
+    pathIds.add(cursor.id);
+    cursor = cursor.parentId !== null ? state.naiveInfo.nodeMap.get(cursor.parentId) : null;
+  }
+  const revealedIds = new Set(
+    state.naiveInfo.ordered.slice(0, currentIndex + 1).map(n => n.id)
+  );
+  return { currentNodeId: currentNode.id, pathIds, revealedIds, currentValue: currentNode.value };
+}
+
+function renderTreeAnimated(info) {
+  const width = 980;
+  const levelGap = 90;
+  const radius = 19;
+  const positions = [];
+  const { currentNodeId, pathIds, revealedIds } = getCurrentTreeNodeAndPath();
+
+  function layout(node, depth, xMin, xMax) {
+    const x = (xMin + xMax) / 2;
+    const y = 36 + depth * levelGap;
+    positions.push({ node, x, y, depth });
+    const childCount = node.children.length;
+    if (!childCount) return;
+    const span = (xMax - xMin) / childCount;
+    node.children.forEach((child, idx) => {
+      layout(child, depth + 1, xMin + idx * span, xMin + (idx + 1) * span);
+    });
+  }
+
+  layout(info.root, 0, 24, width - 24);
+  const byNode = new Map();
+  positions.forEach(p => byNode.set(p.node.id, p));
+  const maxY = Math.max(...positions.map(p => p.y), 120) + 44;
+
+  let svg = `<svg viewBox="0 0 ${width} ${maxY}" aria-label="Recursion tree">`;
+
+  positions.forEach(p => {
+    if (!revealedIds.has(p.node.id)) return;
+    p.node.children.forEach(ch => {
+      if (!revealedIds.has(ch.id)) return;
+      const c = byNode.get(ch.id);
+      const isPathEdge = pathIds.has(p.node.id) && pathIds.has(ch.id);
+      svg += `
+        <line x1="${p.x}" y1="${p.y}" x2="${c.x}" y2="${c.y}"
+          stroke="${isPathEdge ? '#5aa9ff' : '#42506b'}"
+          stroke-width="${isPathEdge ? '3' : '1.4'}"
+          stroke-linecap="round" />
+      `;
+    });
+  });
+
+  positions.forEach(p => {
+    if (!revealedIds.has(p.node.id)) return;
+    const repeated = (info.counts[p.node.value] || 0) > 1;
+    const isCurrent = p.node.id === currentNodeId;
+    const isPath = pathIds.has(p.node.id);
+
+    let fill = repeated ? '#ff5d73' : '#253149';
+    let stroke = isPath ? '#5aa9ff' : '#6d7b99';
+    let strokeWidth = isPath ? 2.6 : 1.2;
+
+    if (isCurrent) {
+      fill = '#b388ff';
+      stroke = '#efe3ff';
+      strokeWidth = 3;
+    }
+
+    svg += `
+      <circle cx="${p.x}" cy="${p.y}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+        ${isCurrent ? `
+          <animate attributeName="r" values="${radius};${radius+4};${radius}" dur="0.9s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-width" values="3;5;3" dur="0.9s" repeatCount="indefinite"/>
+        ` : ``}
+      </circle>
+    `;
+
+    if (isCurrent) {
+      svg += `
+        <circle cx="${p.x}" cy="${p.y}" r="${radius+8}" fill="none" stroke="#d4b8ff" stroke-width="2" opacity="0.65">
+          <animate attributeName="r" values="${radius+5};${radius+12};${radius+5}" dur="0.9s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;0.18;0.7" dur="0.9s" repeatCount="indefinite"/>
+        </circle>
+      `;
+    }
+
+    svg += `<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="12" fill="#ffffff">r(${p.node.value})</text>`;
+  });
+
+  svg += `</svg>`;
+  els.treeWrap.innerHTML = svg;
+}
+
+function drawGrowthChart(data) {
+  const svg = els.growthChart;
+  const w = 900, h = 340, padL = 60, padR = 20, padT = 20, padB = 45;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+
+  if (!data.length) {
+    svg.innerHTML = `<rect x="0" y="0" width="${w}" height="${h}" fill="transparent"></rect>`;
+    return;
+  }
+
+  const maxY = Math.max(...data.flatMap(d => [d.dpComp, d.naiveCalls, d.memoCalls, d.n2])) * 1.1;
+  const x = n => padL + ((n - 1) / Math.max(1, data.length - 1)) * innerW;
+  const y = val => padT + innerH - (val / maxY) * innerH;
+
+  let s = `
+    <rect x="0" y="0" width="${w}" height="${h}" fill="transparent"></rect>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+innerH}" stroke="#5a657c"/>
+    <line x1="${padL}" y1="${padT+innerH}" x2="${padL+innerW}" y2="${padT+innerH}" stroke="#5a657c"/>
+  `;
+
+  for (let k = 0; k <= 5; k++) {
+    const val = (maxY / 5) * k;
+    const yy = y(val);
+    s += `<line x1="${padL}" y1="${yy}" x2="${padL+innerW}" y2="${yy}" stroke="#232b39"/>`;
+    s += `<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#98a4b5">${Math.round(val)}</text>`;
+  }
+
+  data.forEach(d => {
+    s += `<text x="${x(d.n)}" y="${padT+innerH+18}" text-anchor="middle" font-size="11" fill="#98a4b5">${d.n}</text>`;
+  });
+
+  function makePath(key) {
+    return data.map((d, idx) => `${idx === 0 ? 'M' : 'L'} ${x(d.n)} ${y(d[key])}`).join(' ');
+  }
+
+  s += `<path d="${makePath('dpComp')}" fill="none" stroke="#ffffff" stroke-width="2.2"/>`;
+  s += `<path d="${makePath('n2')}" fill="none" stroke="#2ecc71" stroke-width="2" stroke-dasharray="6 5"/>`;
+  s += `<path d="${makePath('naiveCalls')}" fill="none" stroke="#ff5d73" stroke-width="2.2"/>`;
+  s += `<path d="${makePath('memoCalls')}" fill="none" stroke="#b388ff" stroke-width="2.2"/>`;
+
+  const legends = [
+    ['Actual DP candidate checks', '#ffffff'],
+    ['Theoretical n²', '#2ecc71'],
+    ['Naive recursion calls', '#ff5d73'],
+    ['Memoized calls', '#b388ff']
+  ];
+
+  legends.forEach((item, idx) => {
+    const lx = 610, ly = 32 + idx * 22;
+    s += `<line x1="${lx}" y1="${ly}" x2="${lx+24}" y2="${ly}" stroke="${item[1]}" stroke-width="3"/>`;
+    s += `<text x="${lx+32}" y="${ly+4}" font-size="12" fill="#cbd5e1">${item[0]}</text>`;
+  });
+
+  svg.innerHTML = s;
+}
+
+function renderRod(j, currentI) {
+  const width = Math.max(220, 80 * j);
+  let html = `<div class="rod" style="width:${width}px">`;
+  for (let k = 1; k < j; k++) {
+    const left = (k / j) * width;
+    html += `<div class="seg" style="left:${left}px;"></div>`;
+  }
+  if (currentI != null) {
+    const left = (currentI / j) * width;
+    html += `<div class="cut-highlight" style="left:${left-2}px;"></div>`;
+  }
+  html += `</div><div style="position:relative;width:${width}px;height:20px;">`;
+  for (let k = 0; k <= j; k++) {
+    const left = (k / j) * width;
+    html += `<div class="mark-label" style="left:${left}px">${k}</div>`;
+  }
+  html += `</div>`;
+  els.rodArea.innerHTML = html;
+  els.rodTitle.textContent = currentI == null
+    ? `Rod length ${j}`
+    : `Rod length ${j}: currently testing first cut i = ${currentI}`;
+}
+
+function renderDPTable(step) {
+  const revenue = step.revenue || [0];
+  els.dpTable.innerHTML = '';
+
+  revenue.forEach((val, idx) => {
+    const box = document.createElement('div');
+    const classes = ['dp-box'];
+
+    if (idx === step.j) classes.push('current');
+    if (step.currentI != null && idx === (step.j - step.currentI)) classes.push('lookup');
+    if (idx !== 0 && val !== 0) classes.push('done');
+    if (step.writtenIndex === idx) classes.push('just-written');
+    if (idx > step.j && step.kind !== 'write-dp') classes.push('pending');
+
+    let miniText = '';
+    if (idx === step.j && step.kind !== 'write-dp') {
+      miniText = 'current target';
+    } else if (step.currentI != null && idx === (step.j - step.currentI)) {
+      miniText = `lookup r[${idx}]`;
+    } else if (step.writtenIndex === idx) {
+      miniText = 'stored';
+    } else if (idx < step.j && val !== 0) {
+      miniText = 'reusable';
+    } else if (idx === 0) {
+      miniText = 'base case';
+    }
+
+    box.className = classes.join(' ');
+    box.innerHTML = `
+      <div class="head">r[${idx}]</div>
+      <div class="value">${val}</div>
+      <div class="mini">${miniText}</div>
+    `;
+    els.dpTable.appendChild(box);
+  });
+}
+
+function renderCandidates(step) {
+  els.candidateGrid.innerHTML = '';
+  if (!step.j) return;
+
+  if (!step.candidates || !step.candidates.length) {
+    els.candidateGrid.innerHTML = `<div class="sub">No candidates checked yet for this rod length.</div>`;
+    return;
+  }
+
+  step.candidates.forEach(c => {
+    const div = document.createElement('div');
+    const isActive = c.i === step.currentI;
+    const isBest = c.i === step.bestI && step.bestValueSoFar === c.candidate;
+    div.className = 'cand' + (isActive ? ' active' : '') + (isBest ? ' best' : '');
+    div.innerHTML = `
+      <div class="top">First cut i = ${c.i}, remainder = ${c.remainder}</div>
+      <div class="mid">${c.price} + ${c.revenueRem} = ${c.candidate}</div>
+      <div class="btm">price[${c.i}] + revenue[${c.remainder}]</div>
+    `;
+    els.candidateGrid.appendChild(div);
+  });
+
+  els.searchFormula.textContent =
+    `revenue[${step.j}] = max(price[i] + revenue[${step.j}-i]) | current best = ${step.bestValueSoFar === -Infinity ? '-∞' : step.bestValueSoFar}`;
+}
+
+function renderMemoCacheGrid(step) {
+  if (!state.memoSim) return;
+  const n = state.prices.length;
+  els.memoCacheGrid.innerHTML = '';
+
+  const eventIndex = Math.min(
+    state.memoSim.events.length - 1,
+    Math.floor((state.currentStep / Math.max(1, state.steps.length - 1)) * (state.memoSim.events.length - 1))
+  );
+  const activeEvent = step ? state.memoSim.events[eventIndex] : null;
+
+  for (let k = 0; k <= n; k++) {
+    const box = document.createElement('div');
+    box.className = 'cache-box';
+    const hasMemo = state.memoSim.memo[k] !== undefined || k === 0;
+
+    if (activeEvent && activeEvent.x === k) {
+      if (activeEvent.type === 'ask') box.classList.add('ask');
+      if (activeEvent.type === 'hit') box.classList.add('hit');
+      if (activeEvent.type === 'store') box.classList.add('store');
+    }
+
+    box.innerHTML = `
+      <div style="font-size:12px;color:var(--muted)">r(${k})</div>
+      <div style="font-size:18px;font-weight:700;margin-top:5px">${hasMemo ? (k===0 ? 0 : state.memoSim.memo[k] ?? '·') : '·'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        ${activeEvent && activeEvent.x === k
+          ? (activeEvent.type === 'ask' ? 'request'
+            : activeEvent.type === 'hit' ? 'cache hit'
+            : activeEvent.type === 'store' ? 'cache store'
+            : activeEvent.type === 'base' ? 'base'
+            : '')
+          : (hasMemo ? 'known / cached' : 'not cached')}
+      </div>
+    `;
+    els.memoCacheGrid.appendChild(box);
+  }
+
+  if (activeEvent) {
+    els.memoCurrent.textContent = `r(${activeEvent.x})`;
+    if (activeEvent.type === 'ask') {
+      els.memoEvent.textContent = `Top-down recursion is requesting r(${activeEvent.x}).`;
+    } else if (activeEvent.type === 'hit') {
+      els.memoEvent.textContent = `Cache hit: r(${activeEvent.x}) is reused immediately without recomputation.`;
+    } else if (activeEvent.type === 'store') {
+      els.memoEvent.textContent = `Cache store: the computed answer for r(${activeEvent.x}) is saved for later reuse.`;
+    } else if (activeEvent.type === 'base') {
+      els.memoEvent.textContent = `Base case reached: r(0) = 0.`;
+    }
+  }
+}
+
+function renderTabOrderGrid(step) {
+  const n = state.prices.length;
+  els.tabOrderGrid.innerHTML = '';
+
+  for (let k = 0; k <= n; k++) {
+    const box = document.createElement('div');
+    box.className = 'order-box';
+    if (step && k === step.j) box.classList.add('current');
+    if (step && k < step.j) box.classList.add('done');
+    if (k === 0 && (!step || step.j >= 0)) box.classList.add('done');
+
+    box.innerHTML = `
+      <div>r[${k}]</div>
+      <div style="margin-top:5px;color:var(--muted)">
+        ${k === 0 ? 'base' : (step && k < step.j ? 'done' : (step && k === step.j ? 'now' : 'waiting'))}
+      </div>
+    `;
+    els.tabOrderGrid.appendChild(box);
+  }
+
+  if (step) {
+    els.tabCurrent.textContent = `r[${step.j}]`;
+    els.tabEvent.textContent = `Bottom-up tabulation is currently solving r[${step.j}] after already solving all smaller subproblems.`;
+  }
+}
+
+function renderCurrentStep() {
+  if (!state.steps.length) return;
+  const s = state.steps[state.currentStep];
+
+  setActiveLine(s.line);
+  renderDPTable(s);
+  renderCandidates(s);
+  renderRod(s.j || 1, s.currentI);
+  renderMemoCacheGrid(s);
+  renderTabOrderGrid(s);
+
+  if (state.naiveInfo) renderTreeAnimated(state.naiveInfo);
+
+  els.explanation.textContent = s.explanation || '';
+  els.stepCounter.textContent = `${state.currentStep + 1} / ${state.steps.length}`;
+  els.dpComparisons.textContent = s.dpComparisons ?? 0;
+
+  els.dpNarrative.textContent =
+    s.kind === 'write-dp'
+      ? `Tabulation has finalized r[${s.j}] = ${s.bestValueSoFar}. This subproblem is now solved once and can be reused without recomputation.`
+      : `CLO-2 search view: the blue DP cell is the target r[${s.j}], and the yellow cell is the lookup r[${s.j - (s.currentI || 0)}] used in the current candidate.`;
+
+  els.memoText.textContent =
+    `Memoization works top-down. For this input, it makes ${state.metrics.memoCallsTotal} calls, but cached states stop full repeated recomputation.`;
+
+  els.tabText.textContent =
+    `Tabulation works bottom-up and uses ${state.metrics.dpComparisonsTotal} candidate checks overall for n = ${state.prices.length}.`;
+
+  const treeState = getCurrentTreeNodeAndPath();
+  const currentNaive = treeState.currentValue ?? '-';
+  const naiveRepeat = currentNaive !== '-' ? (state.naiveInfo.counts[currentNaive] || 0) : 0;
+
+  els.clo3Box.innerHTML = `
+    <strong>Optimal substructure:</strong> at this moment, the algorithm is using
+    <code>r(${s.j}) = max(price[i] + r(${s.j}-i))</code>.
+    <br><strong>Overlapping subproblems:</strong> the recursion tree currently visits <code>r(${currentNaive})</code>,
+    which appears <strong>${naiveRepeat}</strong> time(s) in the naive tree.
+    <br><strong>Memoization vs Tabulation:</strong> memoization reaches states by recursive requests and caching,
+    while tabulation solves states in order from small to large.
+  `;
+
+  highlightSubproblemRow(currentNaive, s.j);
+  addHistory(state.currentStep, s.explanation || 'Step update');
+}
+
+function highlightSubproblemRow(currentNaive, currentTab) {
+  const rows = [...els.subproblemBody.querySelectorAll('tr')];
+  rows.forEach((row, idx) => {
+    [...row.children].forEach(td => td.classList.remove('active-cell','hit','store','naive-hot'));
+    const k = idx;
+    if (k === currentNaive) row.children[1].classList.add('naive-hot');
+    if (k === currentTab) row.children[3].classList.add('active-cell');
+
+    const memoEventIndex = Math.min(
+      state.memoSim.events.length - 1,
+      Math.floor((state.currentStep / Math.max(1, state.steps.length - 1)) * (state.memoSim.events.length - 1))
+    );
+    const ev = state.memoSim.events[memoEventIndex];
+    if (ev && ev.x === k) {
+      if (ev.type === 'hit') row.children[2].classList.add('hit');
+      if (ev.type === 'store') row.children[2].classList.add('store');
+      if (ev.type === 'ask') row.children[2].classList.add('active-cell');
+    }
+  });
+}
+
+function doStep() {
+  if (!state.built || !state.steps.length) return;
+  if (state.currentStep < state.steps.length - 1) {
+    state.currentStep++;
+    renderCurrentStep();
+  } else {
+    pausePlayback();
+    setStatus('Done');
+  }
+}
+
+function playPlayback() {
+  if (!state.built || !state.steps.length) return;
+  pausePlayback();
+  setStatus('Playing');
+  const delay = 700 / state.speed;
+  state.timer = setInterval(() => {
+    if (state.currentStep >= state.steps.length - 1) {
+      pausePlayback();
+      setStatus('Done');
+      return;
+    }
+    state.currentStep++;
+    renderCurrentStep();
+  }, delay);
+}
+
+function pausePlayback() {
+  if (state.timer) clearInterval(state.timer);
+  state.timer = null;
+}
+
+renderPseudocode();
+updateSpeed();
+stopWheelPropagation(els.pseudocode);
+stopWheelPropagation(els.historyWrap);
+stopWheelPropagation(els.treeScroll);
+
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.id === 'customPresetBtn') {
+      const customValue = els.priceInput.value.trim();
+      if (!customValue) {
+        els.explanation.textContent = 'Please enter custom prices first, for example: 1,5,8,9,10';
+        return;
+      }
+      buildSteps();
+      state.currentStep = 0;
+      renderCurrentStep();
+      setStatus('Playing');
+      setTimeout(() => { playPlayback(); }, 220);
+      return;
+    }
+    els.priceInput.value = btn.dataset.preset;
+  });
+});
+
+els.speedRange.addEventListener('input', updateSpeed);
+els.buildBtn.addEventListener('click', buildSteps);
+
+els.stepBtn.addEventListener('click', () => {
+  pausePlayback();
+  if (!state.built) return;
+  setStatus('Paused');
+  doStep();
+});
+
+els.playBtn.addEventListener('click', playPlayback);
+
+els.pauseBtn.addEventListener('click', () => {
+  pausePlayback();
+  setStatus('Paused');
+});
+
+els.resetBtn.addEventListener('click', resetAll);
+</script>
+</body>
+</html>
